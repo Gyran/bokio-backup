@@ -16,8 +16,12 @@ const DOWNLOAD_FILES = [
   { filename: 'Articles.csv', url: '/Invoices/Article/Export' },
   { filename: 'Employees.csv', url: 'Salary/api/v1/Employees/Export' },
   {
-    filename: 'Kvitton.zip',
+    filename: 'Kvitton20192020.zip',
     url: '/Settings/ExportCompany/ReceiptsForYear?yearStart=2019&yearEnd=2020',
+  },
+  {
+    filename: 'Kvitton20202021.zip',
+    url: '/Settings/ExportCompany/ReceiptsForYear?yearStart=2020&yearEnd=2021',
   },
   {
     filename: 'Bokforing.sie',
@@ -66,10 +70,7 @@ const getTodaysDate = () => {
 
   const year = now.getFullYear();
   const month = (now.getMonth() + 1).toString().padStart(2, '0');
-  const date = now
-    .getDate()
-    .toString()
-    .padStart(2, '0');
+  const date = now.getDate().toString().padStart(2, '0');
 
   return `${year}-${month}-${date}`;
 };
