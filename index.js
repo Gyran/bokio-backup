@@ -14,20 +14,7 @@ const BASE_URL = 'https://app.bokio.se';
 const DOWNLOAD_FILES = [
   { filename: 'Customers.csv', url: '/Invoices/Customer/Export' },
   { filename: 'Articles.csv', url: '/Invoices/Article/Export' },
-  { filename: 'Employees.csv', url: 'Salary/api/v1/Employees/Export' },
-  {
-    filename: 'Kvitton20192020.zip',
-    url: '/Settings/ExportCompany/ReceiptsForYear?yearStart=2019&yearEnd=2020',
-  },
-  {
-    filename: 'Kvitton20202021.zip',
-    url: '/Settings/ExportCompany/ReceiptsForYear?yearStart=2020&yearEnd=2021',
-  },
-  {
-    filename: 'Bokforing.sie',
-    url:
-      '/Settings/ExportCompany/SieForYear?settingsId=c8385c39-e9ed-4587-a1ce-ebb14ecd51a1',
-  },
+  { filename: 'Employees.csv', url: '/Salary/api/v1/Employees/Export' },
   {
     filename: 'InvoiceSummaries.csv',
     url: '/Invoices/Invoice/Export',
@@ -43,8 +30,8 @@ const DOWNLOAD_FILES = [
 const bokioClient = got.extend({
   prefixUrl: `${BASE_URL}/${CONFIG.COMPANY_ID}`,
   headers: {
-    clientreleasedate: '2020-02-27T16:21:44.0000000',
-    clientversion: '1.0.7362.29452',
+    clientreleasedate: '2021-05-06T11:08:06.0000000',
+    clientversion: '1.0.7796.20043',
     cookie: CONFIG.COOKIE,
   },
 });
@@ -92,7 +79,37 @@ const doit = async () => {
 
     console.log('Starting to backup to', backupFolder);
 
-    for (const fileDownloadDesc of DOWNLOAD_FILES) {
+    const filesToDownload = [...DOWNLOAD_FILES];
+
+    // Get the dynamic files per year
+    const years = await bokioClient
+      .get('/Settings/ExportCompany/ListYears')
+      .json();
+
+    if (Array.isArray(years)) {
+      for (let year of years) {
+        const startYear = new Date(year.StartDate).getFullYear();
+        const endYear = new Date(year.EndDate).getFullYear();
+        const id = year.Id;
+
+        const filePostfix = `${startYear}${endYear}`;
+
+        filesToDownload.push({
+          filename: `Bokforing_${filePostfix}.sie`,
+          url: `/Settings/ExportCompany/SieForYear?settingsId=${id}`,
+        });
+        filesToDownload.push({
+          filename: `Kvitton_${filePostfix}.zip`,
+          url: `/Settings/ExportCompany/ReceiptsForYear?yearStart=${startYear}&yearEnd=${endYear}`,
+        });
+        filesToDownload.push({
+          filename: `Verifikationer_${filePostfix}.tsv`,
+          url: `/Settings/ExportCompany/TSVForYear?settingsId=${id}`,
+        });
+      }
+    }
+
+    for (const fileDownloadDesc of filesToDownload) {
       console.log('Starting to download', fileDownloadDesc.filename);
       await downloadFile(backupFolder, fileDownloadDesc);
     }
